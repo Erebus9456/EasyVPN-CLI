@@ -1,0 +1,22 @@
+title: EasyVPN CLI
+description: Documentation for the EasyVPN cross-platform WireGuard CLI
+theme: jekyll-theme-cayman
+
+# Project site: https://erebus9456.github.io/EasyVPN-CLI/
+url: https://erebus9456.github.io
+baseurl: /EasyVPN-CLI
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# GitHub Pages default plugins (README.md becomes the site index)
+plugins:
+  - jekyll-relative-links
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+
+titles_from_headings:
+  enabled: true
+  strip_title: true
