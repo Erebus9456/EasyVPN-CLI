@@ -21,7 +21,7 @@ tasks:
       - go fmt ./...
       - go mod tidy
 
-  # 4. Build local binary
+  # 4. Build local binary (Single OS)
   build:
     desc: Build the easyvpn binary
     cmds:
@@ -31,19 +31,20 @@ tasks:
     generates:
       - bin/easyvpn
 
-  # 5. Fast Test
+  # 5. Test
   test:
     desc: Run tests
     cmds:
       - go test -v ./...
 
-# --- Release Tasks ---
+  # --- Release Tasks ---
+
   release-check:
     desc: Check the GoReleaser configuration for errors
     cmds:
       - goreleaser check
 
   release-snapshot:
-    desc: Build local binaries without publishing (Testing)
+    desc: Build local binaries for all platforms (Testing)
     cmds:
-      - goreleaser release --snapshot --clean --skip-publish
+      - goreleaser release --snapshot --clean

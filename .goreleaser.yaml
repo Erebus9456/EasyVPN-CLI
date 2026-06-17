@@ -1,5 +1,5 @@
 version: 2
-project_name: EasyVPN-CLI
+project_name: easyvpn
 
 before:
   hooks:
@@ -19,18 +19,21 @@ builds:
     binary: easyvpn
 
 archives:
-  - format: tar.gz
-    # use zip for windows
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    # v2 uses 'formats' (plural) as a list
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+        formats:
+          - zip
 
 checksum:
   name_template: "checksums.txt"
 
+# v2 keeps 'snapshot' (singular) but uses 'version_template'
 snapshot:
-  name_template: "{{ incpatch .Version }}-snapshot"
+  version_template: "{{ incpatch .Version }}-snapshot"
 
 changelog:
   sort: asc

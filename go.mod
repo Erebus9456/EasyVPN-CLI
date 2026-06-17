@@ -47,7 +47,6 @@ require (
 	github.com/pterm/pterm v0.12.83
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/supabase-community/supabase-go v0.0.4
 	go.uber.org/multierr v1.10.0 // indirect
 )
