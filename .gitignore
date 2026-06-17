@@ -1,7 +1,7 @@
 # Binaries
 bin/
 dist/
-easyvpn
+/easyvpn
 easyvpn.exe
 
 # Local Config & Secrets
