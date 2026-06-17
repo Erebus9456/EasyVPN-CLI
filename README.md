@@ -45,7 +45,6 @@ The CLI handles discovery, provisioning, tunnel management, and connection lifec
 | Component                  | Repository                                     |
 | -------------------------- | ---------------------------------------------- |
 | VPN Backend Infrastructure | https://github.com/Erebus9456/EasyVPN-Backend  |
-| Frontend Dashboard         | https://github.com/Erebus9456/EasyVPN-Frontend |
 | CLI Client                 | https://github.com/Erebus9456/EasyVPN-CLI      |
 
 ---
