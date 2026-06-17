@@ -1,145 +1,279 @@
-# EasyVPN CLI
+# ⚡ EasyVPN CLI
 
-A cross-platform command-line client for connecting to EasyVPN WireGuard servers. EasyVPN discovers VPN nodes from a Supabase registry, provisions peers through per-node agents, and manages tunnels with platform-specific adapters for Linux, Windows, and macOS.
+> Cross-platform command-line client for discovering, provisioning, and connecting to EasyVPN WireGuard networks.
 
-## Features
+<p align="center">
+  <strong>Discover • Connect • Secure • Automate</strong>
+</p>
 
-- **Server discovery** — Fetches online VPN servers from Supabase (`vpn_servers` table)
-- **Automated provisioning** — Registers WireGuard peers via node agents with API token auth
-- **Key rotation** — Replaces existing peer keys when reconnecting to a different server
-- **Cross-platform tunnels** — Native `wg-quick` on Linux, WireGuard service on Windows, config export on macOS
-- **Kill-switch** — Firewall-based leak protection on Linux and Windows (enabled by default on connect)
-- **State reconciliation** — Detects and heals "ghost" connections when tunnels are closed externally
-- **Interactive menu** — TUI-driven workflow with spinners, tables, and guided prompts
-- **Structured errors** — Machine-readable error codes with actionable remediation hints
+<p align="center">
+  One CLI. Linux, Windows, and macOS.
+</p>
+
+---
+
+## Overview
+
+EasyVPN CLI is the official command-line client for the EasyVPN ecosystem.
+
+It provides a simple, unified experience for connecting to WireGuard-based VPN infrastructure without requiring users to manually manage peers, generate configurations, or edit networking files.
+
+The CLI handles discovery, provisioning, tunnel management, and connection lifecycle management across supported operating systems.
+
+---
+
+## Tech Stack
+
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg" width="48" alt="Go"/>
+  &nbsp;&nbsp;
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" width="48" alt="Linux"/>
+  &nbsp;&nbsp;
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/windows8/windows8-original.svg" width="48" alt="Windows"/>
+  &nbsp;&nbsp;
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" width="48" alt="macOS"/>
+  &nbsp;&nbsp;
+  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/supabase.svg" width="48" alt="Supabase"/>
+  &nbsp;&nbsp;
+  <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/wireguard.svg" width="48" alt="WireGuard"/>
+</p>
+
+---
+
+## Repository Ecosystem
+
+| Component                  | Repository                                     |
+| -------------------------- | ---------------------------------------------- |
+| VPN Backend Infrastructure | https://github.com/Erebus9456/EasyVPN-Backend  |
+| Frontend Dashboard         | https://github.com/Erebus9456/EasyVPN-Frontend |
+| CLI Client                 | https://github.com/Erebus9456/EasyVPN-CLI      |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+
+    User[CLI User]
+    CLI[EasyVPN CLI]
+
+    Registry[(Supabase)]
+    Agent[VPN Node Agent]
+    WG[WireGuard]
+
+    User --> CLI
+    CLI --> Registry
+    CLI --> Agent
+    Agent --> WG
+```
+
+---
+
+## Core Features
+
+### 🌍 Server Discovery
+
+Automatically discovers available VPN nodes through the EasyVPN registry.
+
+---
+
+### ⚡ Automated Provisioning
+
+Creates and configures WireGuard peers without manual server interaction.
+
+---
+
+### 🔐 Secure Connections
+
+Uses WireGuard's modern cryptographic protocol for encrypted tunnels.
+
+---
+
+### 🖥️ Cross-Platform Support
+
+Native support for:
+
+* Linux
+* Windows
+* macOS
+
+---
+
+### 🛡️ Kill Switch Protection
+
+Optional leak protection to prevent traffic escaping outside the VPN tunnel.
+
+---
+
+### 🔄 State Reconciliation
+
+Detects and repairs stale or externally modified VPN sessions.
+
+---
+
+### 📊 Interactive Experience
+
+Built-in terminal UI featuring:
+
+* Interactive menus
+* Progress indicators
+* Connection status
+* Guided workflows
+
+---
+
+## Supported Platforms
+
+| Platform | Support Status |
+| -------- | -------------- |
+| Linux    | ✅ Supported    |
+| Windows  | ✅ Supported    |
+| macOS    | ✅ Supported    |
+
+---
 
 ## Quick Start
 
+Clone the repository:
+
 ```bash
-# 1. Clone and install Go dependencies
 git clone https://github.com/Erebus9456/EasyVPN-CLI.git
 cd EasyVPN-CLI
-task install   # or: ./requirements.sh
+```
 
-# 2. Configure credentials
+Install dependencies:
+
+```bash
+task install
+```
+
+Configure environment:
+
+```bash
 cp .env.example .env
-# Edit .env with your EASYVPN_API_TOKEN, EASYVPN_SUPABASE_URL, and EASYVPN_SUPABASE_ANON_KEY
-
-# 3. Run
-task run                  # Interactive menu
-task run -- connect       # Connect to a server
-task run -- status        # Check connection status
 ```
 
-See [Getting Started](docs/getting-started.md) for the full walkthrough.
+Launch EasyVPN:
 
-## Requirements
-
-| Component | Version |
-|-----------|---------|
-| Go | 1.26+ |
-| WireGuard tools | Platform-specific (see [Platform Support](docs/platform-support.md)) |
-| Credentials | API token + Supabase URL and anon key |
-
-## CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `easyvpn` | Launch the interactive main menu |
-| `easyvpn setup` | Verify and install system requirements |
-| `easyvpn connect` | Select a server and establish a VPN tunnel |
-| `easyvpn disconnect` | Tear down the tunnel and clear state |
-| `easyvpn status` | Show current connection state (reconciled with OS) |
-| `easyvpn ip` | Display your current public IP address |
-
-Full command reference: [CLI Reference](docs/cli-reference.md)
-
-## Configuration
-
-Required environment variables (via `.env` or shell):
-
-```env
-EASYVPN_API_TOKEN=your-api-token
-EASYVPN_SUPABASE_URL=https://your-project.supabase.co
-EASYVPN_SUPABASE_ANON_KEY=your-anon-key
+```bash
+task run
 ```
 
-Optional settings include log level, DNS defaults, allowed IPs, and config directory. See [Configuration](docs/configuration.md) for all variables and defaults.
+---
 
-## Platform Behavior
+## Common Commands
 
-| Platform | Tunnel Management | Kill-Switch |
-|----------|-------------------|-------------|
-| **Linux** | `wg-quick up/down` via `~/.easyvpn/wg0.conf` | `iptables` rules |
-| **Windows** | WireGuard service via `wireguard.exe` | Windows Firewall (`netsh`) |
-| **macOS** | Exports `EasyVPN_macOS.conf` to Desktop | Use WireGuard app settings |
+| Command              | Description                |
+| -------------------- | -------------------------- |
+| `easyvpn`            | Launch interactive menu    |
+| `easyvpn connect`    | Connect to a VPN node      |
+| `easyvpn disconnect` | Disconnect active tunnel   |
+| `easyvpn status`     | View connection status     |
+| `easyvpn ip`         | Display public IP          |
+| `easyvpn setup`      | Verify system requirements |
 
-Details: [Platform Support](docs/platform-support.md)
+---
 
-## Architecture Overview
+## Connection Flow
 
+```mermaid
+sequenceDiagram
+
+    participant User
+    participant CLI
+    participant Registry
+    participant Node
+
+    User->>CLI: Connect
+    CLI->>Registry: Discover Nodes
+    CLI->>Node: Provision Peer
+    Node-->>CLI: WireGuard Config
+    CLI-->>User: Connected
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  CLI / UI   │────▶│  VPN Manager │────▶│ Platform Adapter│
-└─────────────┘     └──────┬───────┘     └─────────────────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-        ┌──────────┐ ┌──────────┐ ┌──────────┐
-        │ Supabase │ │  Agent   │ │  State   │
-        │ Discovery│ │  Client  │ │  Store   │
-        └──────────┘ └──────────┘ └──────────┘
-```
 
-Deep dive: [Architecture](docs/architecture.md)
+---
 
 ## Documentation
 
-| Topic | Description |
-|-------|-------------|
-| [Getting Started](docs/getting-started.md) | First-time setup and first connection |
-| [Installation](docs/installation.md) | Dependencies, build, and deployment |
-| [Configuration](docs/configuration.md) | Environment variables and config directory |
-| [CLI Reference](docs/cli-reference.md) | Commands, flags, and interactive menu |
-| [Architecture](docs/architecture.md) | Package layout, data flow, and design decisions |
-| [Platform Support](docs/platform-support.md) | Linux, Windows, and macOS specifics |
-| [API Integration](docs/api-integration.md) | Supabase discovery and node agent API |
-| [State & Reconciliation](docs/state-and-reconciliation.md) | `state.json`, ghost connections, kill-switch |
-| [Error Handling](docs/error-handling.md) | Error codes and remediation |
-| [Development](docs/development.md) | Local dev workflow, Taskfile, project structure |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+Detailed documentation is organized into dedicated guides.
 
-## Project Structure
+| Guide                  | Description                        |
+| ---------------------- | ---------------------------------- |
+| Getting Started        | First connection walkthrough       |
+| Installation           | Build and deployment               |
+| Configuration          | Environment variables and settings |
+| CLI Reference          | Commands and flags                 |
+| Architecture           | Internal design and data flow      |
+| Platform Support       | OS-specific behavior               |
+| API Integration        | Registry and agent communication   |
+| State & Reconciliation | Connection lifecycle management    |
+| Error Handling         | Error codes and recovery           |
+| Development            | Contributing and local development |
+| Troubleshooting        | Common issues and fixes            |
 
-```
-EasyVPN-CLI/
-├── cmd/easyvpn/          # Application entry point
-├── internal/
-│   ├── api/              # Supabase, agent, and IP clients
-│   ├── config/           # Viper-based configuration loading
-│   ├── core/             # VPN manager and state reconciler
-│   ├── platform/         # OS-specific tunnel adapters
-│   ├── state/            # Persistent state store
-│   └── ui/               # Interactive menus and spinners
-├── pkg/
-│   ├── models/           # Shared data types and errors
-│   └── utils/            # Logger and validators
-├── docs/                 # Documentation (you are here)
-├── Taskfile.yaml         # Task runner definitions
-└── .env.example          # Environment variable template
-```
+---
 
-## Development
+## Design Principles
 
-```bash
-task install    # Install Go dependencies
-task build      # Build binary to bin/easyvpn
-task test       # Run tests
-task tidy       # Format and tidy go.mod
-```
+### Simplicity First
 
-See [Development Guide](docs/development.md) for details.
+Connect to VPN infrastructure without editing WireGuard configuration files.
 
-## License
+### Platform Native
 
-See repository license file for terms.
+Use the best networking implementation available for each operating system.
+
+### Resilient Connectivity
+
+Detect and recover from stale state, interrupted tunnels, and manual changes.
+
+### Secure by Default
+
+Provisioned connections follow WireGuard security best practices.
+
+---
+
+## Use Cases
+
+### Personal VPN Access
+
+Connect to your own EasyVPN infrastructure.
+
+### Multi-Region VPN Networks
+
+Switch between geographically distributed VPN nodes.
+
+### Enterprise Remote Access
+
+Provide secure connectivity to internal resources.
+
+### Infrastructure Testing
+
+Validate and manage VPN deployments from the command line.
+
+---
+
+## Related Repositories
+
+### Backend
+
+https://github.com/Erebus9456/EasyVPN-Backend
+
+WireGuard node provisioning, peer management, and infrastructure automation.
+
+### Frontend
+
+https://github.com/Erebus9456/EasyVPN-Frontend
+
+Administrative dashboard for monitoring and managing VPN infrastructure.
+
+---
+
+<p align="center">
+  <strong>Built for modern WireGuard infrastructure.</strong>
+</p>
+
+<p align="center">
+  Go • WireGuard • Supabase • Linux • Windows • macOS
+</p>
