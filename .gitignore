@@ -1,0 +1,19 @@
+# Binaries
+bin/
+dist/
+easyvpn
+easyvpn.exe
+
+# Local Config & Secrets
+.env
+.env.local
+config.json
+state.json
+
+# Dependencies
+vendor/
+
+# IDEs
+.vscode/
+.idea/
+*.swp

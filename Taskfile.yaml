@@ -1,0 +1,49 @@
+version: '3'
+
+tasks:
+  # 1. Run the app (Usage: task run -- connect)
+  run:
+    desc: Run the CLI in development
+    cmds:
+      - go run cmd/easyvpn/main.go {{.CLI_ARGS}}
+
+  # 2. Install dependencies
+  install:
+    desc: Install Go dependencies
+    cmds:
+      - chmod +x requirements.sh
+      - ./requirements.sh
+
+  # 3. Clean & Format
+  tidy:
+    desc: Format code and clean go.mod
+    cmds:
+      - go fmt ./...
+      - go mod tidy
+
+  # 4. Build local binary
+  build:
+    desc: Build the easyvpn binary
+    cmds:
+      - go build -o bin/easyvpn ./cmd/easyvpn
+    sources:
+      - "**/*.go"
+    generates:
+      - bin/easyvpn
+
+  # 5. Fast Test
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+# --- Release Tasks ---
+  release-check:
+    desc: Check the GoReleaser configuration for errors
+    cmds:
+      - goreleaser check
+
+  release-snapshot:
+    desc: Build local binaries without publishing (Testing)
+    cmds:
+      - goreleaser release --snapshot --clean --skip-publish
