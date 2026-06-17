@@ -261,9 +261,9 @@ https://github.com/Erebus9456/EasyVPN-Backend
 
 WireGuard node provisioning, peer management, and infrastructure automation.
 
-### Frontend
+### CLI
 
-https://github.com/Erebus9456/EasyVPN-Frontend
+https://github.com/Erebus9456/EasyVPN-CLI
 
 Administrative dashboard for monitoring and managing VPN infrastructure.
 
