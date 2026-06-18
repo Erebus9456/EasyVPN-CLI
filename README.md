@@ -2,6 +2,19 @@
 
 > Cross-platform command-line client for discovering, provisioning, and connecting to EasyVPN WireGuard networks.
 
+---
+
+## 🚀 Live Demo
+
+<p align="center">
+  <img src="https://github.com/Erebus9456/EasyVPN-CLI/blob/main/docs/Demo.png?raw=true" alt="EasyVPN CLI Demo" width="900"/>
+</p>
+
+<p align="center">
+  <em>Interactive CLI experience for connecting to distributed WireGuard VPN infrastructure</em>
+</p>
+
+---
 <p align="center">
   <strong>Discover • Connect • Secure • Automate</strong>
 </p>
