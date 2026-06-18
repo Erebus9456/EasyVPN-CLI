@@ -31,6 +31,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.AddCommand(setupCmd)
 	rootCmd.AddCommand(connectCmd)
+	rootCmd.AddCommand(exportCmd)
 	rootCmd.AddCommand(disconnectCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(ipCmd)
@@ -172,6 +173,40 @@ var ipCmd = &cobra.Command{
 	},
 }
 
+var exportCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export a WireGuard config for mobile or desktop clients",
+	Run: func(cmd *cobra.Command, args []string) {
+		ui.StartSpinner("Fetching server list...")
+		discovery, _ := api.NewDiscoveryClient(cfg)
+		servers, err := discovery.FetchActiveServers("")
+		if err != nil {
+			ui.StopSpinnerFail("Discovery failed")
+			handleError(err)
+		}
+		ui.StopSpinnerSuccess(fmt.Sprintf("Found %d active servers", len(servers)))
+
+		selected, err := ui.ShowServerSelection(servers)
+		if err != nil {
+			return
+		}
+
+		exportPath, err := ui.PromptForExportPath()
+		if err != nil {
+			fmt.Println("Export canceled.")
+			return
+		}
+
+		hostname, _ := os.Hostname()
+		path, err := vpnManager.ExportConfig(selected, hostname, exportPath)
+		if err != nil {
+			printError(err)
+			return
+		}
+		printExportInstructions(path)
+	},
+}
+
 // --- LOGIC HELPERS ---
 func runInteractiveMenu() {
 	for {
@@ -191,8 +226,7 @@ func runInteractiveMenu() {
 			ipCmd.Run(ipCmd, []string{})
 
 		case strings.Contains(choice, "Export WireGuard Config"):
-			// For macOS, option 8/3 triggers the connect flow which calls DarwinAdapter.CreateTunnel
-			connectCmd.Run(connectCmd, []string{})
+			exportCmd.Run(exportCmd, []string{})
 
 		case strings.Contains(choice, "List VPN Servers"):
 			connectCmd.Run(connectCmd, []string{})
@@ -310,7 +344,17 @@ func handleOnboarding() {
 	}
 }
 
-func handleError(err error) {
+func printExportInstructions(path string) {
+	fmt.Println("\n✅ WireGuard config exported successfully!")
+	fmt.Printf("📂 Config saved to: %s\n", path)
+	fmt.Println("--------------------------------------------------")
+	fmt.Println("How to use:")
+	fmt.Println("• macOS / iOS: Import the file in the WireGuard app")
+	fmt.Println("• Android: Import from file or scan QR in the WireGuard app")
+	fmt.Println("--------------------------------------------------")
+}
+
+func printError(err error) {
 	if e, ok := err.(*models.EasyVPNError); ok {
 		fmt.Printf("\n❌ [%s] %s\n", e.Code, e.Message)
 		if e.Remediation != "" {
@@ -319,6 +363,10 @@ func handleError(err error) {
 	} else {
 		fmt.Printf("\n❌ Error: %v\n", err)
 	}
+}
+
+func handleError(err error) {
+	printError(err)
 	os.Exit(1)
 }
 

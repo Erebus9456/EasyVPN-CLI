@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -159,4 +161,16 @@ func PromptForConfigValue(name, description string, required bool, validator fun
 
 	err := survey.AskOne(prompt, &val, survey.WithValidator(validate))
 	return strings.TrimSpace(val), err
+}
+
+// PromptForExportPath asks where to save a WireGuard config file.
+func PromptForExportPath() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+	defaultPath := filepath.Join(cwd, "EasyVPN.conf")
+
+	fmt.Printf("\nℹ️  Export path:\n   Leave blank to save as %s\n", defaultPath)
+	return PromptForString("Path to save WireGuard config", false)
 }

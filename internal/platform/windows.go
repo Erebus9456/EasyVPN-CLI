@@ -1,7 +1,6 @@
 package platform
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,30 +53,12 @@ func (a *WindowsAdapter) InstallDependencies() error {
 }
 
 func (a *WindowsAdapter) CreateTunnel(cfg *models.WireGuardConfig) error {
-	// 1. Generate the config file
-	confContent := fmt.Sprintf(`[Interface]
-PrivateKey = %s
-Address = %s
-DNS = %s
-
-[Peer]
-PublicKey = %s
-Endpoint = %s
-AllowedIPs = %s
-PersistentKeepalive = %d
-`, cfg.Interface.PrivateKey, cfg.Interface.Address, cfg.Interface.DNS,
-		cfg.Peer.PublicKey, cfg.Peer.Endpoint, cfg.Peer.AllowedIPs, cfg.Peer.PersistentKeepalive)
-
-	// 2. Write to config directory (WireGuard on Windows usually expects configs in specific places or passed via CLI)
 	configPath := filepath.Join(os.Getenv("USERPROFILE"), ".easyvpn", "wg0.conf")
-	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
-		return models.NewError(models.ErrInternal, "Failed to create config directory", "Check folder permissions", err)
-	}
-	if err := os.WriteFile(configPath, []byte(confContent), 0600); err != nil {
-		return models.NewError(models.ErrInternal, "Failed to write Windows WG config", "Check folder permissions", err)
+	if err := WriteWireGuardConfig(configPath, cfg); err != nil {
+		return err
 	}
 
-	// 3. Command WireGuard to install and start the tunnel as a service
+	// Command WireGuard to install and start the tunnel as a service
 	// wireguard.exe /installmanager "path\to\config.conf"
 	cmd := exec.Command("wireguard.exe", "/installmanager", configPath)
 	if err := cmd.Run(); err != nil {

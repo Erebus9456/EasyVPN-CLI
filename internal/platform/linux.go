@@ -122,31 +122,13 @@ func (a *LinuxAdapter) InstallDependencies() error {
 }
 
 func (a *LinuxAdapter) CreateTunnel(cfg *models.WireGuardConfig) error {
-	// 1. Prepare config content
-	confContent := fmt.Sprintf(`[Interface]
-PrivateKey = %s
-Address = %s
-DNS = %s
-
-[Peer]
-PublicKey = %s
-Endpoint = %s
-AllowedIPs = %s
-PersistentKeepalive = %d
-`, cfg.Interface.PrivateKey, cfg.Interface.Address, cfg.Interface.DNS,
-		cfg.Peer.PublicKey, cfg.Peer.Endpoint, cfg.Peer.AllowedIPs, cfg.Peer.PersistentKeepalive)
-
-	// 2. Write to a temporary profile (wg-quick requires a .conf suffix)
 	home, _ := os.UserHomeDir()
 	confPath := filepath.Join(home, ".easyvpn", "wg0.conf")
-	if err := os.MkdirAll(filepath.Dir(confPath), 0700); err != nil {
-		return models.NewError(models.ErrInternal, "Failed to create WG config directory", "Check permissions of ~/.easyvpn", err)
-	}
-	if err := os.WriteFile(confPath, []byte(confContent), 0600); err != nil {
-		return models.NewError(models.ErrInternal, "Failed to write WG config", "Check permissions of ~/.easyvpn", err)
+	if err := WriteWireGuardConfig(confPath, cfg); err != nil {
+		return err
 	}
 
-	// 3. Execute wg-quick
+	// Execute wg-quick
 	cmd := exec.Command("wg-quick", "up", confPath)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return models.NewError(models.ErrTunnelFailed, "wg-quick failed to bring up the interface", string(output), err)

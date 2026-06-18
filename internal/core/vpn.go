@@ -42,36 +42,81 @@ func NewManager(cfg *config.Config) (*Manager, error) {
 }
 
 // Connect orchestrates the full provisioning and connection lifecycle
-
 func (m *Manager) Connect(targetServer *models.Server, deviceName string, useKillSwitch bool) error {
-	// 1. Check existing state for "Already Connected"
+	wgCfg, pubKey, err := m.prepareConnection(targetServer, deviceName, true)
+	if err != nil {
+		return err
+	}
+
+	ui.UpdateSpinner("Applying configuration...")
+	if err := m.adapter.CreateTunnel(wgCfg); err != nil {
+		return err
+	}
+
+	newState := &models.VPNState{
+		IsConnected:     true,
+		ServerID:        targetServer.ID,
+		ServerName:      targetServer.Name,
+		ServerPublicIP:  targetServer.PublicIP,
+		ClientPublicKey: pubKey,
+		InterfaceName:   "wg0",
+		ConnectedAt:     time.Now(),
+		KillSwitch:      useKillSwitch,
+	}
+	m.state.Save(newState)
+
+	ui.StopSpinnerSuccess(fmt.Sprintf("Successfully connected to %s", targetServer.Name))
+	return nil
+}
+
+// ExportConfig provisions a peer and writes a WireGuard config file without activating a tunnel.
+func (m *Manager) ExportConfig(targetServer *models.Server, deviceName string, outputPath string) (string, error) {
+	wgCfg, _, err := m.prepareConnection(targetServer, deviceName, false)
+	if err != nil {
+		return "", err
+	}
+
+	ui.UpdateSpinner("Writing configuration file...")
+	resolvedPath, err := platform.ResolveExportPath(outputPath)
+	if err != nil {
+		return "", err
+	}
+	if err := platform.WriteWireGuardConfig(resolvedPath, wgCfg); err != nil {
+		return "", err
+	}
+
+	ui.StopSpinnerSuccess(fmt.Sprintf("Config exported to %s", resolvedPath))
+	return resolvedPath, nil
+}
+
+func (m *Manager) prepareConnection(targetServer *models.Server, deviceName string, overwriteWarning bool) (*models.WireGuardConfig, string, error) {
 	currentState, _ := m.state.Load()
 	isRotation := false
 
 	if currentState.IsConnected {
 		ui.StopSpinnerSuccess("Existing connection detected.")
-		msg := fmt.Sprintf("You are already connected to %s. Proceeding will OVERWRITE your existing config and rotate keys. Continue?", currentState.ServerName)
-		if !ui.ConfirmAction(msg) {
-			return models.NewError(models.ErrInternal, "Connection aborted by user", "", nil)
+		msg := "You are already connected to %s. Proceeding will rotate keys on the server. Continue?"
+		if overwriteWarning {
+			msg = "You are already connected to %s. Proceeding will OVERWRITE your existing config and rotate keys. Continue?"
+		}
+		if !ui.ConfirmAction(fmt.Sprintf(msg, currentState.ServerName)) {
+			return nil, "", models.NewError(models.ErrInternal, "Operation aborted by user", "", nil)
 		}
 		isRotation = true
 	}
 
-	// 2. Pre-flight and Health Checks
 	ui.StartSpinner("Verifying system and server health...")
 	agent := api.NewAgentClient(targetServer.PublicIP, targetServer.APIPort, m.cfg.ApiToken)
 	if err := agent.CheckHealth(); err != nil {
-		return err
+		return nil, "", err
 	}
 
-	// 3. Generate NEW WireGuard Keys
 	ui.UpdateSpinner("Generating new secure keypair...")
 	privKey, pubKey, err := m.generateKeypair()
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
-	// 4. Provision or Replace Peer
 	var peerResp *models.PeerResponse
 	if isRotation && currentState.ClientPublicKey != "" {
 		ui.UpdateSpinner("Rotating keys on server...")
@@ -80,12 +125,10 @@ func (m *Manager) Connect(targetServer *models.Server, deviceName string, useKil
 		ui.UpdateSpinner("Provisioning new access...")
 		peerResp, err = agent.AddPeer(deviceName, pubKey)
 	}
-
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
-	// 5. Build and Apply Config (Logic remains the same)
 	wgCfg := &models.WireGuardConfig{}
 	wgCfg.Interface.PrivateKey = privKey
 	wgCfg.Interface.Address = peerResp.ClientIP
@@ -95,26 +138,7 @@ func (m *Manager) Connect(targetServer *models.Server, deviceName string, useKil
 	wgCfg.Peer.AllowedIPs = peerResp.AllowedIPs
 	wgCfg.Peer.PersistentKeepalive = 25
 
-	ui.UpdateSpinner("Applying configuration...")
-	if err := m.adapter.CreateTunnel(wgCfg); err != nil {
-		return err
-	}
-
-	// 6. Finalize State
-	newState := &models.VPNState{
-		IsConnected:     true,
-		ServerID:        targetServer.ID,
-		ServerName:      targetServer.Name,
-		ServerPublicIP:  targetServer.PublicIP,
-		ClientPublicKey: pubKey, // Store the new public key for future rotations
-		InterfaceName:   "wg0",
-		ConnectedAt:     time.Now(),
-		KillSwitch:      useKillSwitch,
-	}
-	m.state.Save(newState)
-
-	ui.StopSpinnerSuccess(fmt.Sprintf("Successfully connected to %s", targetServer.Name))
-	return nil
+	return wgCfg, pubKey, nil
 }
 
 // Disconnect cleans up the tunnel and state

@@ -67,41 +67,9 @@ func (a *DarwinAdapter) InstallDependencies() error {
 }
 
 func (a *DarwinAdapter) CreateTunnel(cfg *models.WireGuardConfig) error {
-	// 1. Generate the WireGuard config content
-	confContent := fmt.Sprintf(`[Interface]
-PrivateKey = %s
-Address = %s
-DNS = %s
-
-[Peer]
-PublicKey = %s
-Endpoint = %s
-AllowedIPs = %s
-PersistentKeepalive = %d
-`, cfg.Interface.PrivateKey, cfg.Interface.Address, cfg.Interface.DNS,
-		cfg.Peer.PublicKey, cfg.Peer.Endpoint, cfg.Peer.AllowedIPs, cfg.Peer.PersistentKeepalive)
-
-	// 2. Define the export path (Desktop is convenient for macOS users)
 	home, _ := os.UserHomeDir()
 	exportPath := filepath.Join(home, "Desktop", "EasyVPN_macOS.conf")
-
-	// 3. Write the file
-	if err := os.WriteFile(exportPath, []byte(confContent), 0600); err != nil {
-		return models.NewError(models.ErrInternal, "Failed to export macOS config", "Check Desktop write permissions", err)
-	}
-
-	// 4. Print instructions to the user (Beast-Mode UX)
-	fmt.Println("\n🍏 macOS Export Successful!")
-	fmt.Printf("📂 Config saved to: %s\n", exportPath)
-	fmt.Println("--------------------------------------------------")
-	fmt.Println("How to use:")
-	fmt.Println("1. Open the official 'WireGuard' app on your Mac.")
-	fmt.Println("2. Click 'Import tunnel(s) from file' (or use the + icon).")
-	fmt.Println("3. Select the 'EasyVPN_macOS.conf' file from your Desktop.")
-	fmt.Println("4. Click 'Activate'.")
-	fmt.Println("--------------------------------------------------")
-
-	return nil
+	return WriteWireGuardConfig(exportPath, cfg)
 }
 
 func (a *DarwinAdapter) DestroyTunnel() error {
