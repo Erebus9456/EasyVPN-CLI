@@ -50,6 +50,10 @@ func initConfig() {
 
 	utils.Initialize(cfg.LogLevel, []string{cfg.ApiToken, cfg.SupabaseKey})
 
+	if err := cfg.EnsureConfigDir(); err != nil {
+		handleError(err)
+	}
+
 	vpnManager, err = core.NewManager(cfg)
 	if err != nil {
 		handleError(err)
@@ -70,7 +74,22 @@ var setupCmd = &cobra.Command{
 			for _, e := range errs {
 				fmt.Printf("❌ %s (Fix: %s)\n", e.Message, e.Remediation)
 			}
-			return
+
+			fmt.Println("\n🛠️ Attempting automatic installation of missing dependencies...")
+			if err := adapter.InstallDependencies(); err != nil {
+				handleError(err)
+				return
+			}
+
+			ui.StartSpinner("Re-checking system requirements...")
+			errs = adapter.CheckRequirements()
+			if len(errs) > 0 {
+				ui.StopSpinnerFail("Requirements check failed after installation")
+				for _, e := range errs {
+					fmt.Printf("❌ %s (Fix: %s)\n", e.Message, e.Remediation)
+				}
+				return
+			}
 		}
 		ui.StopSpinnerSuccess("System is ready for EasyVPN!")
 	},

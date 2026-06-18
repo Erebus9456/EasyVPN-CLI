@@ -70,6 +70,9 @@ PersistentKeepalive = %d
 
 	// 2. Write to config directory (WireGuard on Windows usually expects configs in specific places or passed via CLI)
 	configPath := filepath.Join(os.Getenv("USERPROFILE"), ".easyvpn", "wg0.conf")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		return models.NewError(models.ErrInternal, "Failed to create config directory", "Check folder permissions", err)
+	}
 	if err := os.WriteFile(configPath, []byte(confContent), 0600); err != nil {
 		return models.NewError(models.ErrInternal, "Failed to write Windows WG config", "Check folder permissions", err)
 	}

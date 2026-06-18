@@ -40,14 +40,81 @@ func (a *LinuxAdapter) CheckRequirements() []models.EasyVPNError {
 }
 
 func (a *LinuxAdapter) InstallDependencies() error {
-	// In production, you might try to detect the package manager (apt/yum/pacman)
-	// For now, we guide the user to maintain safety
-	return models.NewError(
-		models.ErrPermissionDenied,
-		"Automatic installation not supported on this distro",
-		"Please run: sudo apt update && sudo apt install -y wireguard wireguard-tools iptables",
-		nil,
-	)
+	isRoot := os.Geteuid() == 0
+	useSudo := !isRoot
+	if useSudo {
+		if _, err := exec.LookPath("sudo"); err != nil {
+			useSudo = false
+		}
+	}
+
+	var cmdName string
+	var cmdArgs []string
+
+	if _, err := exec.LookPath("apt-get"); err == nil {
+		fmt.Println("📦 Linux package manager detected: apt-get")
+		fmt.Println("🛠️ Updating package lists...")
+		
+		var updateCmd *exec.Cmd
+		if useSudo {
+			updateCmd = exec.Command("sudo", "apt-get", "update")
+		} else {
+			updateCmd = exec.Command("apt-get", "update")
+		}
+		updateCmd.Stdin = os.Stdin
+		updateCmd.Stdout = os.Stdout
+		updateCmd.Stderr = os.Stderr
+		_ = updateCmd.Run() // Continue even if update fails
+
+		fmt.Println("🛠️ Installing wireguard, wireguard-tools, and iptables...")
+		cmdName = "apt-get"
+		cmdArgs = []string{"install", "-y", "wireguard", "wireguard-tools", "iptables"}
+	} else if _, err := exec.LookPath("dnf"); err == nil {
+		fmt.Println("📦 Linux package manager detected: dnf")
+		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		cmdName = "dnf"
+		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables"}
+	} else if _, err := exec.LookPath("yum"); err == nil {
+		fmt.Println("📦 Linux package manager detected: yum")
+		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		cmdName = "yum"
+		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables"}
+	} else if _, err := exec.LookPath("pacman"); err == nil {
+		fmt.Println("📦 Linux package manager detected: pacman")
+		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		cmdName = "pacman"
+		cmdArgs = []string{"-S", "--noconfirm", "wireguard-tools", "iptables"}
+	} else {
+		return models.NewError(
+			models.ErrPermissionDenied,
+			"Automatic installation not supported on this distro",
+			"Please install wireguard, wireguard-tools, and iptables using your system's package manager manually.",
+			nil,
+		)
+	}
+
+	var finalCmd *exec.Cmd
+	if useSudo {
+		args := append([]string{cmdName}, cmdArgs...)
+		finalCmd = exec.Command("sudo", args...)
+	} else {
+		finalCmd = exec.Command(cmdName, cmdArgs...)
+	}
+
+	finalCmd.Stdin = os.Stdin
+	finalCmd.Stdout = os.Stdout
+	finalCmd.Stderr = os.Stderr
+
+	if err := finalCmd.Run(); err != nil {
+		return models.NewError(
+			models.ErrInternal,
+			"Package installation failed",
+			"Try running the installation command manually with sudo",
+			err,
+		)
+	}
+
+	return nil
 }
 
 func (a *LinuxAdapter) CreateTunnel(cfg *models.WireGuardConfig) error {
@@ -68,6 +135,9 @@ PersistentKeepalive = %d
 	// 2. Write to a temporary profile (wg-quick requires a .conf suffix)
 	home, _ := os.UserHomeDir()
 	confPath := filepath.Join(home, ".easyvpn", "wg0.conf")
+	if err := os.MkdirAll(filepath.Dir(confPath), 0700); err != nil {
+		return models.NewError(models.ErrInternal, "Failed to create WG config directory", "Check permissions of ~/.easyvpn", err)
+	}
 	if err := os.WriteFile(confPath, []byte(confContent), 0600); err != nil {
 		return models.NewError(models.ErrInternal, "Failed to write WG config", "Check permissions of ~/.easyvpn", err)
 	}
