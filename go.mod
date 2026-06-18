@@ -2,7 +2,10 @@ module github.com/Erebus9456/EasyVPN-CLI
 
 go 1.26.3
 
-require go.uber.org/zap v1.28.0
+require (
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	go.uber.org/zap v1.28.0
+)
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect

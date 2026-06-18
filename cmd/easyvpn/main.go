@@ -198,12 +198,12 @@ var exportCmd = &cobra.Command{
 		}
 
 		hostname, _ := os.Hostname()
-		path, err := vpnManager.ExportConfig(selected, hostname, exportPath)
+		configPath, qrPath, err := vpnManager.ExportConfig(selected, hostname, exportPath)
 		if err != nil {
 			printError(err)
 			return
 		}
-		printExportInstructions(path)
+		printExportInstructions(configPath, qrPath)
 	},
 }
 
@@ -344,13 +344,15 @@ func handleOnboarding() {
 	}
 }
 
-func printExportInstructions(path string) {
+func printExportInstructions(configPath, qrPath string) {
 	fmt.Println("\n✅ WireGuard config exported successfully!")
-	fmt.Printf("📂 Config saved to: %s\n", path)
+	fmt.Printf("📂 Config saved to: %s\n", configPath)
+	fmt.Printf("📱 QR code saved to: %s\n", qrPath)
 	fmt.Println("--------------------------------------------------")
 	fmt.Println("How to use:")
-	fmt.Println("• macOS / iOS: Import the file in the WireGuard app")
-	fmt.Println("• Android: Import from file or scan QR in the WireGuard app")
+	fmt.Println("• macOS / iOS: Import the .conf file or scan the QR code in the WireGuard app")
+	fmt.Println("• Android: Import from file or scan the QR code in the WireGuard app")
+	fmt.Println("⚠️  The QR code contains your private key — only share it on a trusted device.")
 	fmt.Println("--------------------------------------------------")
 }
 

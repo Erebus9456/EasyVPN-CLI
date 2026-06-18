@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Erebus9456/EasyVPN-CLI/pkg/models"
+	"github.com/skip2/go-qrcode"
 )
 
 const defaultExportFilename = "EasyVPN.conf"
@@ -25,6 +26,31 @@ AllowedIPs = %s
 PersistentKeepalive = %d
 `, cfg.Interface.PrivateKey, cfg.Interface.Address, cfg.Interface.DNS,
 		cfg.Peer.PublicKey, cfg.Peer.Endpoint, cfg.Peer.AllowedIPs, cfg.Peer.PersistentKeepalive)
+}
+
+// FormatWireGuardConfigForQR renders the compact format WireGuard mobile apps expect in QR codes.
+func FormatWireGuardConfigForQR(cfg *models.WireGuardConfig) string {
+	return fmt.Sprintf(`[Interface]
+PrivateKey=%s
+Address=%s
+DNS=%s
+
+[Peer]
+PublicKey=%s
+Endpoint=%s
+AllowedIPs=%s
+PersistentKeepalive=%d
+`, cfg.Interface.PrivateKey, cfg.Interface.Address, cfg.Interface.DNS,
+		cfg.Peer.PublicKey, cfg.Peer.Endpoint, cfg.Peer.AllowedIPs, cfg.Peer.PersistentKeepalive)
+}
+
+// QRPathForConfig derives a PNG path from the exported .conf path.
+func QRPathForConfig(configPath string) string {
+	ext := filepath.Ext(configPath)
+	if ext == "" {
+		return configPath + ".png"
+	}
+	return strings.TrimSuffix(configPath, ext) + ".png"
 }
 
 // DefaultExportPath returns the default export location in the current working directory.
@@ -69,6 +95,18 @@ func WriteWireGuardConfig(path string, cfg *models.WireGuardConfig) error {
 	content := FormatWireGuardConfig(cfg)
 	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 		return models.NewError(models.ErrInternal, "Failed to write WireGuard config", "Check folder permissions", err)
+	}
+	return nil
+}
+
+// WriteWireGuardQR writes a scannable QR code PNG for WireGuard mobile clients.
+func WriteWireGuardQR(path string, cfg *models.WireGuardConfig) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return models.NewError(models.ErrInternal, "Failed to create QR export directory", "Check folder permissions", err)
+	}
+	payload := FormatWireGuardConfigForQR(cfg)
+	if err := qrcode.WriteFile(payload, qrcode.Medium, 512, path); err != nil {
+		return models.NewError(models.ErrInternal, "Failed to write WireGuard QR code", "Check folder permissions", err)
 	}
 	return nil
 }

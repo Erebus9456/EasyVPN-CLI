@@ -69,24 +69,30 @@ func (m *Manager) Connect(targetServer *models.Server, deviceName string, useKil
 	return nil
 }
 
-// ExportConfig provisions a peer and writes a WireGuard config file without activating a tunnel.
-func (m *Manager) ExportConfig(targetServer *models.Server, deviceName string, outputPath string) (string, error) {
+// ExportConfig provisions a peer and writes a WireGuard config file and QR code without activating a tunnel.
+func (m *Manager) ExportConfig(targetServer *models.Server, deviceName string, outputPath string) (configPath string, qrPath string, err error) {
 	wgCfg, _, err := m.prepareConnection(targetServer, deviceName, false)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	ui.UpdateSpinner("Writing configuration file...")
 	resolvedPath, err := platform.ResolveExportPath(outputPath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if err := platform.WriteWireGuardConfig(resolvedPath, wgCfg); err != nil {
-		return "", err
+		return "", "", err
+	}
+
+	qrPath = platform.QRPathForConfig(resolvedPath)
+	ui.UpdateSpinner("Generating QR code...")
+	if err := platform.WriteWireGuardQR(qrPath, wgCfg); err != nil {
+		return "", "", err
 	}
 
 	ui.StopSpinnerSuccess(fmt.Sprintf("Config exported to %s", resolvedPath))
-	return resolvedPath, nil
+	return resolvedPath, qrPath, nil
 }
 
 func (m *Manager) prepareConnection(targetServer *models.Server, deviceName string, overwriteWarning bool) (*models.WireGuardConfig, string, error) {
