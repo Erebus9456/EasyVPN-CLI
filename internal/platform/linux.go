@@ -24,14 +24,18 @@ func (a *LinuxAdapter) IsPrivileged() (bool, error) {
 
 func (a *LinuxAdapter) CheckRequirements() []models.EasyVPNError {
 	var errs []models.EasyVPNError
-	tools := []string{"wg", "wg-quick", "iptables"}
+	tools := []string{"wg", "wg-quick", "iptables", "resolvconf"}
 
 	for _, tool := range tools {
 		if _, err := exec.LookPath(tool); err != nil {
+			hint := fmt.Sprintf("Please install %s (e.g., 'sudo apt install wireguard-tools iptables openresolv')", tool)
+			if tool == "resolvconf" {
+				hint = "Please install openresolv (e.g., 'sudo apt install openresolv') — wg-quick needs resolvconf when DNS is set in the config"
+			}
 			errs = append(errs, *models.NewError(
 				models.ErrMissingDependency,
 				fmt.Sprintf("Missing dependency: %s", tool),
-				fmt.Sprintf("Please install %s (e.g., 'sudo apt install wireguard-tools iptables')", tool),
+				hint,
 				err,
 			))
 		}
@@ -66,29 +70,29 @@ func (a *LinuxAdapter) InstallDependencies() error {
 		updateCmd.Stderr = os.Stderr
 		_ = updateCmd.Run() // Continue even if update fails
 
-		fmt.Println("🛠️ Installing wireguard, wireguard-tools, and iptables...")
+		fmt.Println("🛠️ Installing wireguard, wireguard-tools, iptables, and openresolv...")
 		cmdName = "apt-get"
-		cmdArgs = []string{"install", "-y", "wireguard", "wireguard-tools", "iptables"}
+		cmdArgs = []string{"install", "-y", "wireguard", "wireguard-tools", "iptables", "openresolv"}
 	} else if _, err := exec.LookPath("dnf"); err == nil {
 		fmt.Println("📦 Linux package manager detected: dnf")
-		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		fmt.Println("🛠️ Installing wireguard-tools, iptables, and openresolv...")
 		cmdName = "dnf"
-		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables"}
+		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables", "openresolv"}
 	} else if _, err := exec.LookPath("yum"); err == nil {
 		fmt.Println("📦 Linux package manager detected: yum")
-		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		fmt.Println("🛠️ Installing wireguard-tools, iptables, and openresolv...")
 		cmdName = "yum"
-		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables"}
+		cmdArgs = []string{"install", "-y", "wireguard-tools", "iptables", "openresolv"}
 	} else if _, err := exec.LookPath("pacman"); err == nil {
 		fmt.Println("📦 Linux package manager detected: pacman")
-		fmt.Println("🛠️ Installing wireguard-tools and iptables...")
+		fmt.Println("🛠️ Installing wireguard-tools, iptables, and openresolv...")
 		cmdName = "pacman"
-		cmdArgs = []string{"-S", "--noconfirm", "wireguard-tools", "iptables"}
+		cmdArgs = []string{"-S", "--noconfirm", "wireguard-tools", "iptables", "openresolv"}
 	} else {
 		return models.NewError(
 			models.ErrPermissionDenied,
 			"Automatic installation not supported on this distro",
-			"Please install wireguard, wireguard-tools, and iptables using your system's package manager manually.",
+			"Please install wireguard, wireguard-tools, iptables, and openresolv using your system's package manager manually.",
 			nil,
 		)
 	}

@@ -2,8 +2,8 @@ package ui
 
 import (
 	"fmt"
-
 	"runtime"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/Erebus9456/EasyVPN-CLI/pkg/models"
@@ -20,7 +20,7 @@ func ShowMainMenu() (string, error) {
 		options = []string{
 			"1) Install all requirements (wireguard-tools)",
 			"2) Check Current Public IP",
-			"3) Export macOS WireGuard Config",
+			"3) Export WireGuard Config for MacOS / Android and iOS",
 			"0) Exit",
 		}
 	} else {
@@ -33,7 +33,7 @@ func ShowMainMenu() (string, error) {
 			"5) Show Connection Status",
 			"6) Kill-switch Management",
 			"7) Check Current Public IP",
-			"8) Export macOS WireGuard Config",
+			"8) Export WireGuard Config for MacOS / Android and iOS",
 			"0) Exit",
 		}
 	}
@@ -133,4 +133,30 @@ func ConfirmAction(message string) bool {
 	}
 	survey.AskOne(prompt, &result)
 	return result
+}
+
+// PromptForConfigValue asks the user for a configuration parameter, providing an explanation first.
+func PromptForConfigValue(name, description string, required bool, validator func(string) error) (string, error) {
+	fmt.Printf("\nℹ️  %s:\n   %s\n", name, description)
+	var val string
+	prompt := &survey.Input{
+		Message: fmt.Sprintf("Enter %s: ", name),
+	}
+
+	validate := func(input interface{}) error {
+		str, ok := input.(string)
+		if !ok || len(strings.TrimSpace(str)) == 0 {
+			if required {
+				return fmt.Errorf("this field is required")
+			}
+			return nil
+		}
+		if validator != nil {
+			return validator(strings.TrimSpace(str))
+		}
+		return nil
+	}
+
+	err := survey.AskOne(prompt, &val, survey.WithValidator(validate))
+	return strings.TrimSpace(val), err
 }
