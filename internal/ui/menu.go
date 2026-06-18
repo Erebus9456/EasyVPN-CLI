@@ -20,7 +20,7 @@ func ShowMainMenu() (string, error) {
 		options = []string{
 			"1) Install all requirements (wireguard-tools)",
 			"2) Check Current Public IP",
-			"3) Export WireGuard Config for MacOS / Android and iOS",
+			"3) Export WireGuard Config for MacOS / Android / iOS",
 			"0) Exit",
 		}
 	} else {
@@ -33,7 +33,7 @@ func ShowMainMenu() (string, error) {
 			"5) Show Connection Status",
 			"6) Kill-switch Management",
 			"7) Check Current Public IP",
-			"8) Export WireGuard Config for MacOS / Android and iOS",
+			"8) Export WireGuard Config for MacOS / Android / iOS",
 			"0) Exit",
 		}
 	}

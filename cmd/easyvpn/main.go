@@ -190,7 +190,7 @@ func runInteractiveMenu() {
 		case strings.Contains(choice, "Check Current Public IP"):
 			ipCmd.Run(ipCmd, []string{})
 
-		case strings.Contains(choice, "Export macOS WireGuard Config"):
+		case strings.Contains(choice, "Export WireGuard Config"):
 			// For macOS, option 8/3 triggers the connect flow which calls DarwinAdapter.CreateTunnel
 			connectCmd.Run(connectCmd, []string{})
 
