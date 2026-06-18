@@ -17,3 +17,11 @@ vendor/
 .vscode/
 .idea/
 *.swp
+
+# Build files
+build/
+
+# OS/System files
+.DS_Store
+**/ .DS_Store
+**/.DS_Store
